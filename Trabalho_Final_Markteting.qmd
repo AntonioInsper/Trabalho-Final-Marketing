@@ -450,6 +450,7 @@ termos_foco <- tolower(c(
   "composição", "natural", "cheiroso", "adorou", "agradavel",
   "fezes", "qualidade", "benefício", "excelente", "seco",
   "recomendo", "paladar", "duro", "aparencia", "hipoalergenico", 
+  "grande", "alimentação", "proteíca", "aspecto"
 ))
 
 colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
@@ -527,6 +528,7 @@ df_pivot <- df_marca_termos %>%
     values_from = Média_Score
   )
 
+df_pivot[is.na(df_pivot)] <- 0
 
 
 ```
@@ -535,6 +537,38 @@ df_pivot <- df_marca_termos %>%
 ```{r}
 view(df_pivot)
 ```
+
+
+
+
+
+```{r}
+
+# Step 1: Pivot term Frequência per Marca
+df_freq <- df_marca_termos %>%
+  select(Marca, Termo, Frequência) %>%
+  pivot_wider(
+    names_from = Termo,
+    values_from = Frequência,
+    values_fill = 0
+  )
+
+# Step 2: Calculate average Score per Marca (overall)
+df_score <- terms_df %>%
+  group_by(Marca) %>%
+  summarise(avg_score = mean(Score, na.rm = TRUE))
+
+# Step 3: Join both
+df_final <- left_join(df_score, df_freq, by = "Marca")
+
+
+```
+
+```{r}
+View(df_final)
+```
+
+
 
 - Composição
 - Natural
@@ -551,4 +585,8 @@ view(df_pivot)
 - duro
 - aparencia
 - hipoalergenico
+- grande
+- alimentação
+- proteíca
+- aspecto
 

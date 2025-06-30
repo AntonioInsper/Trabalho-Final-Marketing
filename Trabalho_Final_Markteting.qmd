@@ -1,0 +1,420 @@
+---
+title: "Trabalho Final Marketing - Antonio Paneguini, Pedro Miné, Victor Tokunaga"
+---
+
+### Introdução
+
+
+```{r}
+
+setwd("/home/antonio/Insper/Marketing Analytics/Trabalho Final")
+library(reticulate)
+use_virtualenv("./.venv", required = TRUE)
+
+```
+
+
+```{python}
+import pandas as pd
+import glob
+import os
+import re
+from pathlib import Path
+import matplotlib.pyplot as plt
+import seaborn as sns 
+import numpy as np
+from wordcloud import WordCloud, STOPWORDS
+import altair as alt
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.cluster import KMeans
+import nltk
+nltk.download('stopwords') 
+from sklearn.decomposition import PCA
+from nltk.corpus import stopwords
+from sklearn.tree import DecisionTreeClassifier, plot_tree # Import Decision Tree Classifier
+from sklearn.model_selection import train_test_split # Import train_test_split function
+from sklearn import metrics 
+from scipy.sparse import hstack 
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.preprocessing import label_binarize
+from sklearn.metrics import roc_curve, auc
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
+from sklearn.metrics import RocCurveDisplay
+from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.multiclass import OneVsRestClassifier
+from sklearn.model_selection import GridSearchCV
+```
+
+
+
+
+
+```{python}
+def extrair_searchword(nome_arquivo):
+    match = re.search(r"SEARCHWORD(\d+)", nome_arquivo)
+    return int(match.group(1)) if match else float('inf')
+
+df = pd.read_csv('df_risco_conc.csv')
+
+
+df['Palavra_Chave'].unique()
+
+```
+
+
+
+
+
+```{python}
+df_petisco = df[df['Palavra_Chave'].isin(['Petisco calmante','Petisco Natural Cães','petisco Super Premium','petisco suplementoso','Petisco hipoalergenico', 'Bifinho Super Premium','Bifinho','Bifinho Natural','Bifinho Super Premium'])]
+
+
+df_petisco = df_petisco[df_petisco['Qtde_Aval'] != 0]
+
+```
+
+
+
+
+```{python}
+df_petisco[['Risco_Concorrencia_Predito', 'Nota_Produto', 'Qtde_Aval']].value_counts()
+```
+
+
+
+
+
+
+```{python}
+df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
+```
+
+
+
+```{python}
+df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] == 'Risco Alto']
+```
+
+
+
+```{python}
+df_petisco = df_petisco[~df_petisco['Nome_Produto'].str.contains('Gatos')]
+df_petisco  = df_petisco[~df_petisco['Nome_Produto'].str.contains('Ração')]
+```
+
+
+
+```{python}
+df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
+```
+
+
+
+
+```{python}
+diretorio = Path("Comentarios")
+cmmt_files = list(diretorio.glob("ComentariosPetlove*"))
+
+
+arquivos_ordenados = sorted(cmmt_files, key=lambda x:extrair_searchword(str(x)))
+
+dfs = [pd.read_csv(arquivo) for arquivo in arquivos_ordenados]
+df_cmmt = pd.concat (dfs, ignore_index=True)
+```
+
+
+
+```{python}
+df_cmmt_conc = df_cmmt[df_cmmt['Produto'].isin(df_petisco['Nome_Produto'])]
+```
+
+
+
+
+```{python}
+df_cmmt_conc.rename(columns={'Produto' : 'Nome_Produto'}, inplace=True)
+```
+
+
+
+```{python}
+df_cmmt_conc = df_cmmt_conc.merge(df_petisco[['Nome_Produto', 'Risco_Concorrencia_Predito']], on='Nome_Produto', how='inner')
+```
+
+
+
+```{python}
+df_cmmt_conc = df_cmmt_conc[df_cmmt_conc['Palavra_Chave'].isin(df_petisco['Palavra_Chave'])]
+```
+
+
+
+```{python}
+df_nomes = pd.read_csv("Nomes/nomes.csv")
+
+df_nomes = df_nomes.fillna(0)
+
+df_cmmt_conc.rename(columns={'Nome_Comentario' : 'Nomes'}, inplace=True)
+
+
+df_nomes.rename(columns={'first_name' : 'Nomes'}, inplace=True)
+
+
+df_nomes['Nomes'] = df_nomes['Nomes'].str.capitalize()
+
+
+df_cmmt_conc = df_cmmt_conc.merge(df_nomes[['classification', 'Nomes']], on='Nomes', how='left')
+
+
+df_cmmt_conc['Comentários'] = df_cmmt_conc['Comentários'].fillna("Nenhum comentário redigido")
+
+
+
+df_cmmt_conc['classification'].fillna("Indefinido")
+
+
+df_cmmt_conc['classification'].value_counts(normalize=True)
+
+
+df_cmmt_conc.rename(columns={'classification': 'Gênero'}, inplace=True)
+
+
+
+df_cmmt_conc = df_cmmt_conc.iloc[:,1:]
+
+```
+
+
+##### Salvar CSV 
+
+```{python}
+
+df_cmmt_conc.to_csv('pca_petisco_df.csv')
+
+
+
+```
+
+
+```{python}
+df_cmmt_conc['Marca'].unique()
+```
+```{r}
+
+
+
+library(tidyverse)
+library(factoextra)
+library(ggthemes)
+library(ggrepel)
+library(tidytext)
+library(skimr)
+#setwd('/home/antonio/Insper/Marketing Analytics/Trabalho Final')
+
+
+df  <- py$df_cmmt_conc
+```
+
+
+```{r}
+View(df)
+
+rownames(df)
+
+```
+
+
+
+```{r}
+df  <- df  %>% 
+    distinct(Link, Nomes, .keep_all=TRUE)
+
+```
+
+```{r}
+View(df)
+
+```
+
+#### Topic Models
+
+
+
+```{r}
+library(tm)
+library(topicmodels)
+
+
+stopwords("pt")
+corpus <- VCorpus(VectorSource(df$Comentários))
+
+corpus <- tm_map(corpus, content_transformer(tolower))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, removeWords, stopwords("pt"))
+
+
+```
+
+
+
+```{r}
+
+
+# Create DocumentTermMatrix (DTM)
+dtm <- DocumentTermMatrix(corpus)
+
+# Remove empty rows (required for LDA)
+dtm <- dtm[rowSums(as.matrix(dtm)) > 0, ]
+
+
+# 5. Remover documentos vazios (linhas com 0 termos)
+dtm <- dtm[row_sums(dtm) > 0, ]
+
+# 6. Remover termos raros (ex: que aparecem em apenas 1 documento)
+dtm <- dtm[, col_sums(dtm) > 1]
+
+# (opcional) Garantir que DTM final tem conteúdo
+if (nrow(dtm) == 0 | ncol(dtm) == 0) stop("DTM vazio após limpeza!")
+```
+
+
+
+```{r}
+# Set number of topics
+k <- 15 # for example, 115 topics
+
+# Fit LDA using Gibbs sampling
+lda_model <- LDA(dtm, k = k, control = list(seed = 777))
+
+```
+
+
+
+```{r}
+terms(lda_model, 5)  # top 5 terms per topic
+
+```
+
+
+```{r}
+topics(lda_model)
+
+```
+
+
+
+```{r}
+topic_distributions <- posterior(lda_model)$topics
+term_distributions <- posterior(lda_model)$terms
+
+```
+
+
+```{r}
+View(topic_distributions)
+View(term_distributions)
+```
+
+```{r}
+#dtm <- dtm[rowSums(as.matrix(dtm)) > 0, ]  # remove empty documents
+#dtm <- dtm[, colSums(as.matrix(dtm)) > 0]  # remove empty terms
+#dtm <- removeSparseTerms(dtm, 0.99)
+
+```
+
+
+
+```{r}
+
+
+# Convert topic model to tidy format
+topics_tidy <- tidy(lda_model)
+
+# Top 10 terms per topic
+top_terms <- topics_tidy %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+# Plot
+ggplot(top_terms, aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  labs(title = "Top Terms per Topic", x = NULL, y = "β (term importance)")
+
+```
+
+
+
+```{r}
+library(pheatmap)
+
+phi <- posterior(lda_model)$terms
+top_terms <- apply(phi, 1, function(x) order(x, decreasing = TRUE)[1:10])
+term_names <- unique(colnames(phi)[top_terms])
+
+heatmap_data <- phi[, term_names]
+pheatmap(heatmap_data, cluster_rows = TRUE, cluster_cols = TRUE,
+         main = "Heatmap of Top Terms by Topic")   
+
+```
+
+
+
+```{r}
+dtm_matrix <- as.matrix(dtm)
+
+terms_df <-as.data.frame(dtm_matrix)
+
+doc_index <-as.numeric(rownames((terms_df)))
+
+terms_df$Marca <- df$Marca[as.numeric(rownames(terms_df))]
+terms_df$Score <- df$Nota_Avaliação[doc_index]
+
+```
+
+
+```{r}
+brand_term_avg <- terms_df %>% 
+    group_by(Marca) %>% 
+    summarise(across(.cols = where(is.numeric), .fns = mean, na.rm = TRUE))
+```
+
+```{r}
+term_score_corr <- cor(brand_term_avg %>% select(-Marca), use= "complete.obs")
+
+term_vs_score <- term_score_corr[, "Score"]
+term_vs_score <- sort(term_vs_score, decreasing = TRUE)
+
+head(term_vs_score, 10)
+tail(term_vs_score, 10)
+
+```
+
+
+
+```{r}
+library(ggplot2)
+
+top_terms <- sort(term_vs_score, decreasing = TRUE)
+top_terms_df <- data.frame(term = names(top_terms), corr = top_terms)
+
+ggplot(top_terms_df %>% slice_head(n = 15), aes(x = reorder(term, corr), y = corr)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(title = "Terms Most Positively Correlated with Review Score",
+       x = "Term", y = "Correlation with Score")
+
+```

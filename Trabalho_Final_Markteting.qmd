@@ -416,5 +416,139 @@ ggplot(top_terms_df %>% slice_head(n = 15), aes(x = reorder(term, corr), y = cor
   coord_flip() +
   labs(title = "Terms Most Positively Correlated with Review Score",
        x = "Term", y = "Correlation with Score")
+         
+```
+
+
+
+```{r}
+termos_foco <- c(
+  "composição", "natural", "cheiroso", "adorou", "agradavel",
+  "fezes", "qualidade", "benefício", "excelente", "seco",
+  "recomendo", "paladar", "duro", "aparencia"
+)
 
 ```
+
+```{r}
+# Check current type
+str(terms_df$Score)
+
+```
+
+```{r}
+terms_df$Score
+```
+
+```{r}
+
+# Make sure column names in terms_df are in lowercase without accents
+#colnames(terms_df) <- tolower(colnames(terms_df))
+
+# Normalize the focus terms
+termos_foco <- tolower(c(
+  "composição", "natural", "cheiroso", "adorou", "agradavel",
+  "fezes", "qualidade", "benefício", "excelente", "seco",
+  "recomendo", "paladar", "duro", "aparencia", "hipoalergenico", 
+))
+
+colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
+
+# Normalize focus terms
+termos_foco <- tolower(stri_trans_general(termos_foco, "Latin-ASCII"))
+
+# Filter only those terms that exist in the term-document matrix
+termos_validos <- termos_foco[termos_foco %in% colnames(terms_df)]
+
+# Calculate mean score for each term (and optionally count)
+resultados <- lapply(termos_validos, function(term) {
+  subset <- terms_df[terms_df[[term]] > 0, ]
+  data.frame(
+    Termo = term,
+    Média_Score = mean(subset$Score, na.rm = TRUE),
+    Frequência = nrow(subset)
+  )
+})
+
+# Combine into a single dataframe
+resultados_df <- bind_rows(resultados)
+
+# Optional: Order by score or frequency
+resultados_df <- resultados_df %>% arrange(desc(Média_Score))
+
+print(resultados_df)
+
+```
+
+
+```{r}
+resultados_por_marca <- lapply(termos_validos, function(term) {
+  terms_df %>%
+    filter(.data[[term]] > 0) %>%
+    group_by(Marca) %>%
+    summarise(
+      Termo = term,
+      Média_Score = mean(Score, na.rm = TRUE),
+      Frequência = n()
+    )
+})
+
+df_marca_termos <- bind_rows(resultados_por_marca)
+
+```
+
+
+
+
+```{r}
+resultados_por_marca <- lapply(termos_validos, function(term) {
+  terms_df %>%
+    filter(.data[[term]] > 0) %>%
+    group_by(Marca) %>%
+    summarise(
+      Termo = term,
+      Média_Score = mean(Score, na.rm = TRUE),
+      Frequência = n()
+    )
+})
+
+df_marca_termos <- bind_rows(resultados_por_marca)
+
+```
+
+
+```{r}
+
+
+df_pivot <- df_marca_termos %>%
+  select(Marca, Termo, Média_Score) %>%
+  pivot_wider(
+    names_from = Termo,
+    values_from = Média_Score
+  )
+
+
+
+```
+#### Lista de Termos
+
+```{r}
+view(df_pivot)
+```
+
+- Composição
+- Natural
+- Cheiroso
+- Adorou
+- Agradavel
+- fezes
+- qualidade
+- benefício
+- excelente
+- seco
+- recomendo
+- paladar
+- duro
+- aparencia
+- hipoalergenico
+

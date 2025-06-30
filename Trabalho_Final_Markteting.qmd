@@ -101,7 +101,7 @@ df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
 
 
 ```{python}
-df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] == 'Risco Alto']
+df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] !== 'Risco Nulo']
 ```
 
 
@@ -218,6 +218,7 @@ library(ggthemes)
 library(ggrepel)
 library(tidytext)
 library(skimr)
+library(stringi)
 #setwd('/home/antonio/Insper/Marketing Analytics/Trabalho Final')
 
 
@@ -422,12 +423,12 @@ ggplot(top_terms_df %>% slice_head(n = 15), aes(x = reorder(term, corr), y = cor
 
 
 ```{r}
-termos_foco <- c(
-  "composição", "natural", "cheiroso", "adorou", "agradavel",
-  "fezes", "qualidade", "benefício", "excelente", "seco",
-  "recomendo", "paladar", "duro", "aparencia"
-)
-
+#termos_foco <- c(
+#  "composição", "natural", "cheiroso", "adorou", "agradavel",
+#  "fezes", "qualidade", "benefício", "excelente", "seco",
+#  "recomendo", "paladar", "duro", "aparencia"
+#)
+#
 ```
 
 ```{r}
@@ -437,7 +438,23 @@ str(terms_df$Score)
 ```
 
 ```{r}
-terms_df$Score
+str(termos_validos)
+```
+
+
+
+
+```{r}
+resultados <- lapply(termos_validos, function(term) {
+  print(term)  # Para acompanhar o progresso
+  subset <- terms_df[terms_df[[term]] > 0, ]
+  data.frame(
+    Termo = term,
+    Média_Score = mean(subset$Score, na.rm = TRUE),
+    Frequência = nrow(subset)
+  )
+})
+
 ```
 
 ```{r}
@@ -447,8 +464,8 @@ terms_df$Score
 
 # Normalize the focus terms
 termos_foco <- tolower(c(
-  "composição", "natural", "cheiroso", "adorou", "agradavel",
-  "fezes", "qualidade", "benefício", "excelente", "seco",
+  "composição", "natural", "cheiroso", "cheirosa", "adorou", "agradavel",
+ "qualidade", "benefício", "excelente", "seco", "diarreia",
   "recomendo", "paladar", "duro", "aparencia", "hipoalergenico", 
   "grande", "alimentação", "proteíca", "aspecto"
 ))
@@ -531,41 +548,79 @@ df_pivot <- df_marca_termos %>%
 df_pivot[is.na(df_pivot)] <- 0
 
 
+
 ```
+
+
+
 #### Lista de Termos
 
 ```{r}
-view(df_pivot)
+View(df_pivot)
 ```
 
 
 
 
 
+#### PCA
+
+
+
+```{r}
+df_pivot <- as.data.frame(df_pivot)
+
+rownames(df_pivot) <- df_pivot[,1]
+
+df_pivot <- df_pivot[ ,-1]
+pc.cr <- df_pivot %>% prcomp(cor = TRUE)
+
+
+summary(pc.cr)
+
+```
+
+
+
+```{r}
+pc.cr$x
+pc.cr$rotation
+```
+
 ```{r}
 
-# Step 1: Pivot term Frequência per Marca
-df_freq <- df_marca_termos %>%
-  select(Marca, Termo, Frequência) %>%
-  pivot_wider(
-    names_from = Termo,
-    values_from = Frequência,
-    values_fill = 0
-  )
+fviz_pca_biplot(pc.cr, repel = TRUE)+
+  labs(title = "Proximidade de atributos entre as marcas(MultiDimensional Scaling)",
+       caption='Fonte: Webscraping - PetLove') +
+  #theme_few()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        plot.caption = element_text(hjust=0,
+                                    vjust=-0.5,size=8))
+```
 
-# Step 2: Calculate average Score per Marca (overall)
-df_score <- terms_df %>%
-  group_by(Marca) %>%
-  summarise(avg_score = mean(Score, na.rm = TRUE))
 
-# Step 3: Join both
-df_final <- left_join(df_score, df_freq, by = "Marca")
+```{r}
+
+pc.cr <- df_pivot %>% prcomp(cor = TRUE) 
+
+fviz_pca_biplot(pc.cr, repel = TRUE)+
+  labs(title = "Proximidade de atributos entre as marcas(MultiDimensional Scaling)",
+       caption='Fonte: Webscraping - PetLove') +
+  theme_few()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        plot.caption = element_text(hjust=0,
+                                    vjust=-0.5,size=8))
+
+```
+
+```{r}
 
 
 ```
 
 ```{r}
-View(df_final)
 ```
 
 
@@ -589,4 +644,4 @@ View(df_final)
 - alimentação
 - proteíca
 - aspecto
-
+- diarréia

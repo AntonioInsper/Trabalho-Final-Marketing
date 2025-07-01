@@ -4,6 +4,31 @@ title: "Trabalho Final Marketing - Antonio Paneguini, Pedro Miné, Victor Tokuna
 
 ### Introdução
 
+Neste relatório, nos dedicamos a criar uma analise de percepção de marcas de Petiscos de Cachorro para podermos entender quais são os termos mais importantes e frequentes tidos pelos clientes quando eles consideram comprar um biscoito em um mercado pet cada vez mais inserido nas dinamicas familiares modernas, onde o cuidado do animal de estimação se torna prioridade alta por partes dos tutores.
+
+#### Contextualização
+
+A empresa Petí, atuante no mercado de Pet Treats, estava interessada em analises de percepção de seus proprios produtos e o posicionamento de si mesma no mercado. Para poder dimensionalizar sua situação, foi primeiro necessario fazer uma analise dos concorrentes para se inserir eles no mercado e ter uma ideia de seu posicionamento em relação a eles.
+
+Como a Petí não dispões de uma volumetria alta de dados sobre a percepção dos clientes sobre si, foi dado preferencia a tentar se projetar perto de empresas que usam produtos e linguagens semelhantes. Apos algumas analises de clusterização preliminares (pode ser lida no arquivo *Analise_Predição_Petisco_Bifinho.html* incluso, mas nao sera o foco do trabalho), foi apresentado para os socios uma lista de empresas que foram identificadas como potenciais concorrentes. Em uma cvotação cega, os soios deveriam votar em quem eles achassem que era um potencial concorrente direto, dando uma pontuação binaria de 1 ou 0. Ao final da votação, o score total de cada marca foi somado com um maximo de tres:
+
+  - Risco Alto (3 pontos)
+  - Risco Médio (2 pontos)
+  - Risco Baixo (1 ponto)
+  - Risco Nulo (0 pontos, ninguem votou nessa marca)
+
+
+
+#### Base de Dados
+
+A base foi extraida por meio de Web Scraping do site de e-commerce da empresa **PetLove** realizado por bots usando a biblioteca Selenium do Python. Uma versão do script utilizado esta disponivel em: {colocar o link do github aqui}
+
+
+#### Metodologia de WebScraping
+
+
+
+
 
 ```{r}
 
@@ -159,33 +184,33 @@ df_cmmt_conc = df_cmmt_conc[df_cmmt_conc['Palavra_Chave'].isin(df_petisco['Palav
 
 
 ```{python}
-df_nomes = pd.read_csv("Nomes/nomes.csv")
+#df_nomes = pd.read_csv("Nomes/nomes.csv")
 
-df_nomes = df_nomes.fillna(0)
+#df_nomes = df_nomes.fillna(0)
 
 df_cmmt_conc.rename(columns={'Nome_Comentario' : 'Nomes'}, inplace=True)
 
 
-df_nomes.rename(columns={'first_name' : 'Nomes'}, inplace=True)
+#df_nomes.rename(columns={'first_name' : 'Nomes'}, inplace=True)
 
 
-df_nomes['Nomes'] = df_nomes['Nomes'].str.capitalize()
+#df_nomes['Nomes'] = df_nomes['Nomes'].str.capitalize()
 
 
-df_cmmt_conc = df_cmmt_conc.merge(df_nomes[['classification', 'Nomes']], on='Nomes', how='left')
+#df_cmmt_conc = df_cmmt_conc.merge(df_nomes[['classification', 'Nomes']], on='Nomes', how='left')
 
 
 df_cmmt_conc['Comentários'] = df_cmmt_conc['Comentários'].fillna("Nenhum comentário redigido")
 
 
 
-df_cmmt_conc['classification'].fillna("Indefinido")
+#df_cmmt_conc['classification'].fillna("Indefinido")
 
 
-df_cmmt_conc['classification'].value_counts(normalize=True)
+#df_cmmt_conc['classification'].value_counts(normalize=True)
 
 
-df_cmmt_conc.rename(columns={'classification': 'Gênero'}, inplace=True)
+#df_cmmt_conc.rename(columns={'classification': 'Gênero'}, inplace=True)
 
 
 
@@ -197,10 +222,8 @@ df_cmmt_conc = df_cmmt_conc.iloc[:,1:]
 ##### Salvar CSV 
 
 ```{python}
-
+#
 df_cmmt_conc.to_csv('pca_petisco_df.csv')
-
-
 
 ```
 
@@ -215,6 +238,8 @@ df_cmmt_conc['Marca'].unique()
 library(tidyverse)
 library(factoextra)
 library(ggthemes)
+
+
 library(ggrepel)
 library(tidytext)
 library(skimr)
@@ -224,15 +249,6 @@ library(stringi)
 
 df  <- py$df_cmmt_conc
 ```
-
-
-```{r}
-View(df)
-
-rownames(df)
-
-```
-
 
 
 ```{r}
@@ -253,6 +269,7 @@ View(df)
 ```{r}
 library(tm)
 library(topicmodels)
+library(slam)
 
 
 stopwords("pt")
@@ -308,7 +325,7 @@ terms(lda_model, 5)  # top 5 terms per topic
 
 
 ```{r}
-topics(lda_model)
+#topics(lda_model)
 
 ```
 
@@ -431,16 +448,42 @@ ggplot(top_terms_df %>% slice_head(n = 15), aes(x = reorder(term, corr), y = cor
 #
 ```
 
-```{r}
-# Check current type
-str(terms_df$Score)
+
+```{python}
+
+stop_words = stopwords.words('portuguese')
+
+stopwords = stop_words 
+
+
+other_words = ['/n', 'Ja', 'dtype', 'Name', 'int', 'Otto', 'gato', 'gata', 'object', 'Comentários', 'Length', 'muita', 'muito']
+
+for word in other_words:
+    stopwords.append(word)
+
+for nota in df_cmmt_conc['Nota_Avaliação'].unique():
+    comment_nota = df_cmmt_conc[df_cmmt_conc['Nota_Avaliação'] ==  nota]['Comentários']
+
+    print(f'{nota}')
+
+    text = comment_nota
+
+    wordcloud = WordCloud(
+        width = 3000,
+        height= 2000,
+        background_color= 'black',
+        stopwords= stopwords).generate(str(text))
+    fig = plt.figure(
+        figsize= (40,30),
+        facecolor = 'k',
+        edgecolor = 'k')    
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
+    plt.tight_layout(pad=0)
+    plt.show()
+
 
 ```
-
-```{r}
-str(termos_validos)
-```
-
 
 ```{r}
 
@@ -452,7 +495,10 @@ termos_foco <- tolower(c(
   "composição", "natural", "cheiroso", "cheirosa", "adorou", "agradavel",
  "qualidade", "benefício", "excelente", "seco", "diarreia",
   "recomendo", "paladar", "duro", "aparencia", "hipoalergenico", 
-  "grande", "alimentação", "proteíca", "aspecto"
+  "grande", "alimentação", "proteíca", "aspecto", 
+  "fezes", "coco", "melhorou" , "piorou" , "alergia" , "coceira" , "pata" ,
+  "vermelho", "macio",  "ressecado", "esfarelento", "premium" ,"atrativo", "aceitação",
+   "vegano", "ruim",  "energia", "quantidade", "caro", "barato"
 ))
 
 #colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
@@ -523,6 +569,10 @@ df_marca_termos <- bind_rows(resultados_por_marca)
 
 
 ```{r}
+View(df_marca_termos)
+```
+
+```{r}
 
 
 df_pivot <- df_marca_termos %>%
@@ -534,7 +584,7 @@ df_pivot <- df_marca_termos %>%
 
 df_pivot[is.na(df_pivot)] <- 0
 
-
+ 
 
 ```
 
@@ -584,6 +634,7 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
         axis.line = element_line(colour = "black"),
         plot.caption = element_text(hjust=0,
                                     vjust=-0.5,size=8))
+
 ```
 
 
@@ -602,35 +653,10 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 
 ```
 
-```{r}
-
-## Step 1: Pivot term Frequência per Marca
-#df_freq <- df_marca_termos %>%
-#  select(Marca, Termo, Frequência) %>%
-#  pivot_wider(
-#    names_from = Termo,
-#    values_from = Frequência,
-#    values_fill = 0
-#  )
-#
-## Step 2: Calculate average Score per Marca (overall)
-#df_score <- terms_df %>%
-#  group_by(Marca) %>%
-#  summarise(avg_score = mean(Score, na.rm = TRUE))
-#
-## Step 3: Join both
-#df_final <- left_join(df_score, df_freq, by = "Marca")
 
 
-```
-
-```{r}
-```
-
-
-
-- Composição
-- Natural
+- composição
+- natural
 - Cheiroso
 - Adorou
 - Agradavel
@@ -649,7 +675,14 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 - proteíca
 - aspecto
 - diarréia
-
+- coco
+- melhorou
+- piorou
+- alergia
+- coceira
+- pata
+- vermelho
+- macio
 
 
 ### Para fazer

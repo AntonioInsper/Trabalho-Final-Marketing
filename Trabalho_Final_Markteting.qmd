@@ -7,7 +7,7 @@ title: "Trabalho Final Marketing - Antonio Paneguini, Pedro Miné, Victor Tokuna
 
 ```{r}
 
-setwd("/home/antonio/Insper/Marketing Analytics/Trabalho Final")
+setwd("/home/antonio/Insper/Marketing Analytics/Trabalho-Final-Marketing")
 library(reticulate)
 use_virtualenv("./.venv", required = TRUE)
 
@@ -604,7 +604,7 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 
 ```{r}
 
-# Step 1: Pivot term Frequência per Marca
+## Step 1: Pivot term Frequência per Marca
 #df_freq <- df_marca_termos %>%
 #  select(Marca, Termo, Frequência) %>%
 #  pivot_wider(
@@ -620,8 +620,8 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 #
 ## Step 3: Join both
 #df_final <- left_join(df_score, df_freq, by = "Marca")
-#
-#
+
+
 ```
 
 ```{r}

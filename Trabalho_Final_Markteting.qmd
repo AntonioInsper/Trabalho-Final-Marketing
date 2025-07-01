@@ -101,7 +101,7 @@ df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
 
 
 ```{python}
-df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] !== 'Risco Nulo']
+df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] != 'Risco Nulo']
 ```
 
 
@@ -442,21 +442,6 @@ str(termos_validos)
 ```
 
 
-
-
-```{r}
-resultados <- lapply(termos_validos, function(term) {
-  print(term)  # Para acompanhar o progresso
-  subset <- terms_df[terms_df[[term]] > 0, ]
-  data.frame(
-    Termo = term,
-    Média_Score = mean(subset$Score, na.rm = TRUE),
-    Frequência = nrow(subset)
-  )
-})
-
-```
-
 ```{r}
 
 # Make sure column names in terms_df are in lowercase without accents
@@ -470,7 +455,7 @@ termos_foco <- tolower(c(
   "grande", "alimentação", "proteíca", "aspecto"
 ))
 
-colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
+#colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
 
 # Normalize focus terms
 termos_foco <- tolower(stri_trans_general(termos_foco, "Latin-ASCII"))
@@ -480,6 +465,7 @@ termos_validos <- termos_foco[termos_foco %in% colnames(terms_df)]
 
 # Calculate mean score for each term (and optionally count)
 resultados <- lapply(termos_validos, function(term) {
+  print(term)  # Para acompanhar o progresso
   subset <- terms_df[terms_df[[term]] > 0, ]
   data.frame(
     Termo = term,
@@ -487,6 +473,7 @@ resultados <- lapply(termos_validos, function(term) {
     Frequência = nrow(subset)
   )
 })
+
 
 # Combine into a single dataframe
 resultados_df <- bind_rows(resultados)
@@ -617,7 +604,24 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 
 ```{r}
 
-
+# Step 1: Pivot term Frequência per Marca
+#df_freq <- df_marca_termos %>%
+#  select(Marca, Termo, Frequência) %>%
+#  pivot_wider(
+#    names_from = Termo,
+#    values_from = Frequência,
+#    values_fill = 0
+#  )
+#
+## Step 2: Calculate average Score per Marca (overall)
+#df_score <- terms_df %>%
+#  group_by(Marca) %>%
+#  summarise(avg_score = mean(Score, na.rm = TRUE))
+#
+## Step 3: Join both
+#df_final <- left_join(df_score, df_freq, by = "Marca")
+#
+#
 ```
 
 ```{r}
@@ -645,3 +649,13 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 - proteíca
 - aspecto
 - diarréia
+
+
+
+### Para fazer
+
+- Resampling
+- Criar graficos e fazer update no bot
+- Storytelling, colocar uma demo do bot talvez
+- Melhor visualização final
+- Interpretar o resultado final

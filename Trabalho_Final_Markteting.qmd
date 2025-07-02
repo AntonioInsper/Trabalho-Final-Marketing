@@ -4,13 +4,13 @@ title: "Trabalho Final Marketing - Antonio Paneguini, Pedro Miné, Victor Tokuna
 
 ### Introdução
 
-Neste relatório, nos dedicamos a criar uma analise de percepção de marcas de Petiscos de Cachorro para podermos entender quais são os termos mais importantes e frequentes tidos pelos clientes quando eles consideram comprar um biscoito em um mercado pet cada vez mais inserido nas dinamicas familiares modernas, onde o cuidado do animal de estimação se torna prioridade alta por partes dos tutores.
+Neste relatório, nos dedicamos a criar uma analise de percepção de marcas de Petiscos de Cachorro para podermos entender quais são os termos mais importantes e frequentes tidos pelos clientes quando eles consideram comprar um biscoito em um mercado pet cada vez mais inserido nas dinamicas familiares modernas, onde o cuidado do animal de estimação se torna prioridade alta por partes dos tutores. O relatório sera feito baseado em uma pesquisa previamente realizada pela empresa Petí, vendedora de petiscos saudáveis para animais de estimação. Tendo um foco maior nos petiscos hipoalergenicos (baixo risco de gerar alergias)
 
 #### Contextualização
 
 A empresa Petí, atuante no mercado de Pet Treats, estava interessada em analises de percepção de seus proprios produtos e o posicionamento de si mesma no mercado. Para poder dimensionalizar sua situação, foi primeiro necessario fazer uma analise dos concorrentes para se inserir eles no mercado e ter uma ideia de seu posicionamento em relação a eles.
 
-Como a Petí não dispões de uma volumetria alta de dados sobre a percepção dos clientes sobre si, foi dado preferencia a tentar se projetar perto de empresas que usam produtos e linguagens semelhantes. Apos algumas analises de clusterização preliminares (pode ser lida no arquivo *Analise_Predição_Petisco_Bifinho.html* incluso, mas nao sera o foco do trabalho), foi apresentado para os socios uma lista de empresas que foram identificadas como potenciais concorrentes. Em uma cvotação cega, os soios deveriam votar em quem eles achassem que era um potencial concorrente direto, dando uma pontuação binaria de 1 ou 0. Ao final da votação, o score total de cada marca foi somado com um maximo de tres:
+Como a Petí não dispões de uma volumetria alta de dados sobre a percepção dos clientes sobre si, foi dado preferencia a tentar se projetar perto de empresas que usam produtos e linguagens semelhantes. Apos algumas analises de clusterização preliminares (pode ser lida no arquivo *Analise_Predição_Petisco_Bifinho.html* incluso, mas nao sera o foco do trabalho), foi apresentado para os socios uma lista de empresas que foram identificadas como potenciais concorrentes. Em uma votação cega, os sócios deveriam votar em quem eles achassem que era um potencial concorrente direto, dando uma pontuação binaria de 1 ou 0. Ao final da votação, o score total de cada marca foi somado com um maximo de tres:
 
   - Risco Alto (3 pontos)
   - Risco Médio (2 pontos)
@@ -26,6 +26,9 @@ A base foi extraida por meio de Web Scraping do site de e-commerce da empresa **
 
 #### Metodologia de WebScraping
 
+
+
+Foi orçado palavras-chave relevantes que potencias consumidores colocariam na barra de pesquisa de e-commerces, o bot iria colocar estas palavras chaves   
 
 
 
@@ -222,8 +225,8 @@ df_cmmt_conc = df_cmmt_conc.iloc[:,1:]
 ##### Salvar CSV 
 
 ```{python}
-#
-df_cmmt_conc.to_csv('pca_petisco_df.csv')
+
+#df_cmmt_conc.to_csv('pca_petisco_df.csv')
 
 ```
 
@@ -439,15 +442,6 @@ ggplot(top_terms_df %>% slice_head(n = 15), aes(x = reorder(term, corr), y = cor
 
 
 
-```{r}
-#termos_foco <- c(
-#  "composição", "natural", "cheiroso", "adorou", "agradavel",
-#  "fezes", "qualidade", "benefício", "excelente", "seco",
-#  "recomendo", "paladar", "duro", "aparencia"
-#)
-#
-```
-
 
 ```{python}
 
@@ -481,8 +475,6 @@ for nota in df_cmmt_conc['Nota_Avaliação'].unique():
     plt.axis('off')
     plt.tight_layout(pad=0)
     plt.show()
-
-
 ```
 
 ```{r}
@@ -498,7 +490,7 @@ termos_foco <- tolower(c(
   "grande", "alimentação", "proteíca", "aspecto", 
   "fezes", "coco", "melhorou" , "piorou" , "alergia" , "coceira" , "pata" ,
   "vermelho", "macio",  "ressecado", "esfarelento", "premium" ,"atrativo", "aceitação",
-   "vegano", "ruim",  "energia", "quantidade", "caro", "barato"
+   "vegano", "ruim",  "energia", "quantidade", "caro", "barato", "embalagem"
 ))
 
 #colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
@@ -653,6 +645,7 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 
 ```
 
+### interpretação
 
 
 - composição

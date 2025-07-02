@@ -10,32 +10,53 @@ Neste relatório, nos dedicamos a criar uma analise de percepção de marcas de 
 
 A empresa Petí, atuante no mercado de Pet Treats, estava interessada em analises de percepção de seus proprios produtos e o posicionamento de si mesma no mercado. Para poder dimensionalizar sua situação, foi primeiro necessario fazer uma analise dos concorrentes para se inserir eles no mercado e ter uma ideia de seu posicionamento em relação a eles.
 
-Como a Petí não dispões de uma volumetria alta de dados sobre a percepção dos clientes sobre si, foi dado preferencia a tentar se projetar perto de empresas que usam produtos e linguagens semelhantes. Apos algumas analises de clusterização preliminares (pode ser lida no arquivo *Analise_Predição_Petisco_Bifinho.html* incluso, mas nao sera o foco do trabalho), foi apresentado para os socios uma lista de empresas que foram identificadas como potenciais concorrentes. Em uma votação cega, os sócios deveriam votar em quem eles achassem que era um potencial concorrente direto, dando uma pontuação binaria de 1 ou 0. Ao final da votação, o score total de cada marca foi somado com um maximo de tres:
+Como a Petí não dispõe de uma volumetria alta de dados sobre a percepção dos clientes sobre si, foi dado preferencia a tentar se projetar perto de empresas que usam produtos e linguagens semelhantes. Apos algumas analises de clusterização preliminares (pode ser lida no arquivo *Analise_Predição_Petisco_Bifinho.html* incluso, mas nao sera o foco do trabalho), foi apresentado para os socios uma lista de empresas que foram identificadas como potenciais concorrentes. Em uma votação cega, os sócios deveriam votar em quem eles achassem que era um potencial concorrente direto, dando uma pontuação binaria de 1 ou 0. Ao final da votação, o score total de cada marca foi somado com um maximo de tres:
 
   - Risco Alto (3 pontos)
   - Risco Médio (2 pontos)
   - Risco Baixo (1 ponto)
   - Risco Nulo (0 pontos, ninguem votou nessa marca)
 
-
-
 #### Base de Dados
 
-A base foi extraida por meio de Web Scraping do site de e-commerce da empresa **PetLove** realizado por bots usando a biblioteca Selenium do Python. Uma versão do script utilizado esta disponivel em: {colocar o link do github aqui}
+A base foi extraida por meio de Web Scraping do site de e-commerce da empresa **PetLove** (https://www.petlove.com.br) realizado por bots usando a biblioteca Selenium do Python. Uma versão do script utilizado esta disponivel em: https://github.com/AntonioInsper/webscraper-petlove
 
 
 #### Metodologia de WebScraping
 
 
 
-Foi orçado palavras-chave relevantes que potencias consumidores colocariam na barra de pesquisa de e-commerces, o bot iria colocar estas palavras chaves   
+Foram orçadas palavras-chave relevantes que potenciais consumidores colocariam na barra de pesquisa de e-commerces, o bot iria colar as palavras-chaves armazenadas em uma lista na barra de pesquisa, entraria dentro de cada item dipsonibilizado pela consulta, retiraria informações gerais de cada produto, as avaliações, os títulos as notas das avaliações e as questões dos clientes. As palavras-chaves utilizadas foram as que mais se encaixavam no perfil de produtos da Petí:
+  
+  - Petisco Natural Cães
+  - Petisco natural
+  - Petisco hipoalergenico
+  - petisco suplementoso
+  - Petisco calmante
+  - petisco Super Premium
+  - inseto
+  - insect
+  - Hipoalergenico
+  - mordedor
+  - Gastro
+  - Bifinho
+  - Bifinho Super Premium
+  - Bifinho Natural
+  - Bifinho hipoalergenico
+  - tenebrio
+  - Alimentação natural fresca
+  - Mordedor natural
+  - suplemento animal
 
 
+
+
+### Transformações
 
 
 ```{r}
 
-setwd("/home/antonio/Insper/Marketing Analytics/Trabalho-Final-Marketing")
+setwd("/home/antonio/Insper/Marketing Analytics/Trabalho Final")
 library(reticulate)
 use_virtualenv("./.venv", required = TRUE)
 
@@ -96,59 +117,26 @@ df = pd.read_csv('df_risco_conc.csv')
 
 df['Palavra_Chave'].unique()
 
-```
 
 
 
-
-
-```{python}
 df_petisco = df[df['Palavra_Chave'].isin(['Petisco calmante','Petisco Natural Cães','petisco Super Premium','petisco suplementoso','Petisco hipoalergenico', 'Bifinho Super Premium','Bifinho','Bifinho Natural','Bifinho Super Premium'])]
 
 
 df_petisco = df_petisco[df_petisco['Qtde_Aval'] != 0]
 
-```
 
-
-
-
-```{python}
 df_petisco[['Risco_Concorrencia_Predito', 'Nota_Produto', 'Qtde_Aval']].value_counts()
-```
 
-
-
-
-
-
-```{python}
 df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
-```
 
 
-
-```{python}
 df_petisco = df_petisco[df_petisco['Risco_Concorrencia_Predito'] != 'Risco Nulo']
-```
-
-
-
-```{python}
 df_petisco = df_petisco[~df_petisco['Nome_Produto'].str.contains('Gatos')]
 df_petisco  = df_petisco[~df_petisco['Nome_Produto'].str.contains('Ração')]
-```
 
-
-
-```{python}
 df_petisco[['Marca_Produto', 'Risco_Concorrencia_Predito']].value_counts()
-```
 
-
-
-
-```{python}
 diretorio = Path("Comentarios")
 cmmt_files = list(diretorio.glob("ComentariosPetlove*"))
 
@@ -157,83 +145,36 @@ arquivos_ordenados = sorted(cmmt_files, key=lambda x:extrair_searchword(str(x)))
 
 dfs = [pd.read_csv(arquivo) for arquivo in arquivos_ordenados]
 df_cmmt = pd.concat (dfs, ignore_index=True)
-```
 
 
 
-```{python}
+
 df_cmmt_conc = df_cmmt[df_cmmt['Produto'].isin(df_petisco['Nome_Produto'])]
-```
 
 
 
-
-```{python}
 df_cmmt_conc.rename(columns={'Produto' : 'Nome_Produto'}, inplace=True)
-```
 
-
-
-```{python}
 df_cmmt_conc = df_cmmt_conc.merge(df_petisco[['Nome_Produto', 'Risco_Concorrencia_Predito']], on='Nome_Produto', how='inner')
-```
 
-
-
-```{python}
 df_cmmt_conc = df_cmmt_conc[df_cmmt_conc['Palavra_Chave'].isin(df_petisco['Palavra_Chave'])]
-```
-
-
-
-```{python}
-#df_nomes = pd.read_csv("Nomes/nomes.csv")
-
-#df_nomes = df_nomes.fillna(0)
 
 df_cmmt_conc.rename(columns={'Nome_Comentario' : 'Nomes'}, inplace=True)
-
-
-#df_nomes.rename(columns={'first_name' : 'Nomes'}, inplace=True)
-
-
-#df_nomes['Nomes'] = df_nomes['Nomes'].str.capitalize()
-
-
-#df_cmmt_conc = df_cmmt_conc.merge(df_nomes[['classification', 'Nomes']], on='Nomes', how='left')
-
 
 df_cmmt_conc['Comentários'] = df_cmmt_conc['Comentários'].fillna("Nenhum comentário redigido")
 
 
-
-#df_cmmt_conc['classification'].fillna("Indefinido")
-
-
-#df_cmmt_conc['classification'].value_counts(normalize=True)
-
-
-#df_cmmt_conc.rename(columns={'classification': 'Gênero'}, inplace=True)
-
-
-
 df_cmmt_conc = df_cmmt_conc.iloc[:,1:]
 
-```
-
-
-##### Salvar CSV 
-
-```{python}
-
-#df_cmmt_conc.to_csv('pca_petisco_df.csv')
-
-```
-
-
-```{python}
 df_cmmt_conc['Marca'].unique()
+
 ```
+
+
+Após as limpezas, descemos o numero de marcas para apenas 9 marcas com dados relevantes a serem analisados
+
+
+
 ```{r}
 
 
@@ -261,8 +202,9 @@ df  <- df  %>%
 ```
 
 ```{r}
-View(df)
-
+print(head(df, 5))
+ 
+skim(df)
 ```
 
 #### Topic Models
@@ -284,13 +226,6 @@ corpus <- tm_map(corpus, stripWhitespace)
 corpus <- tm_map(corpus, removeWords, stopwords("pt"))
 
 
-```
-
-
-
-```{r}
-
-
 # Create DocumentTermMatrix (DTM)
 dtm <- DocumentTermMatrix(corpus)
 
@@ -306,56 +241,23 @@ dtm <- dtm[, col_sums(dtm) > 1]
 
 # (opcional) Garantir que DTM final tem conteúdo
 if (nrow(dtm) == 0 | ncol(dtm) == 0) stop("DTM vazio após limpeza!")
-```
 
-
-
-```{r}
 # Set number of topics
 k <- 15 # for example, 115 topics
 
 # Fit LDA using Gibbs sampling
 lda_model <- LDA(dtm, k = k, control = list(seed = 777))
 
-```
 
-
-
-```{r}
 terms(lda_model, 5)  # top 5 terms per topic
 
-```
-
-
-```{r}
-#topics(lda_model)
-
-```
-
-
-
-```{r}
 topic_distributions <- posterior(lda_model)$topics
 term_distributions <- posterior(lda_model)$terms
 
-```
 
 
-```{r}
-View(topic_distributions)
-View(term_distributions)
-```
+print(head(topic_distributions), 5)
 
-```{r}
-#dtm <- dtm[rowSums(as.matrix(dtm)) > 0, ]  # remove empty documents
-#dtm <- dtm[, colSums(as.matrix(dtm)) > 0]  # remove empty terms
-#dtm <- removeSparseTerms(dtm, 0.99)
-
-```
-
-
-
-```{r}
 
 
 # Convert topic model to tidy format
@@ -375,11 +277,6 @@ ggplot(top_terms, aes(term, beta, fill = factor(topic))) +
   coord_flip() +
   labs(title = "Top Terms per Topic", x = NULL, y = "β (term importance)")
 
-```
-
-
-
-```{r}
 library(pheatmap)
 
 phi <- posterior(lda_model)$terms
@@ -390,11 +287,6 @@ heatmap_data <- phi[, term_names]
 pheatmap(heatmap_data, cluster_rows = TRUE, cluster_cols = TRUE,
          main = "Heatmap of Top Terms by Topic")   
 
-```
-
-
-
-```{r}
 dtm_matrix <- as.matrix(dtm)
 
 terms_df <-as.data.frame(dtm_matrix)
@@ -404,16 +296,10 @@ doc_index <-as.numeric(rownames((terms_df)))
 terms_df$Marca <- df$Marca[as.numeric(rownames(terms_df))]
 terms_df$Score <- df$Nota_Avaliação[doc_index]
 
-```
-
-
-```{r}
 brand_term_avg <- terms_df %>% 
     group_by(Marca) %>% 
     summarise(across(.cols = where(is.numeric), .fns = mean, na.rm = TRUE))
-```
 
-```{r}
 term_score_corr <- cor(brand_term_avg %>% select(-Marca), use= "complete.obs")
 
 term_vs_score <- term_score_corr[, "Score"]
@@ -422,11 +308,6 @@ term_vs_score <- sort(term_vs_score, decreasing = TRUE)
 head(term_vs_score, 10)
 tail(term_vs_score, 10)
 
-```
-
-
-
-```{r}
 library(ggplot2)
 
 top_terms <- sort(term_vs_score, decreasing = TRUE)
@@ -477,12 +358,32 @@ for nota in df_cmmt_conc['Nota_Avaliação'].unique():
     plt.show()
 ```
 
+
+#### Termos Escolhidos
+
+
+Os termos escolhidos foram tanto pelas analises exploratorias iniciais como quanto por decisões de negócios passadas, *inputs* dos membros do grupo, *inputs* dos sócios da Petí que consultaram no projeto durante esta fase e subsequenets testes na modelagem de PCA. Apos alguns testes e discussões, chegamos nesta lista de atributos descrita na variavel "termos foco"
+
+```{markdown}
+termos_foco <- tolower(c(
+  "composição", "natural", "cheiroso", "cheirosa", "adorou", "agradavel",
+ "qualidade", "benefício", "excelente", "seco", "diarreia",
+  "recomendo", "paladar", "duro", "aparencia", "hipoalergenico", 
+  "grande", "alimentação", "proteíca", "aspecto", 
+  "fezes", "coco", "melhorou" , "piorou" , "alergia" , "coceira" , "pata" ,
+  "vermelho", "macio",  "ressecado", "esfarelento", "premium" ,"atrativo", "aceitação",
+   "vegano", "ruim",  "energia", "quantidade", "caro", "barato", "embalagem"
+))
+```
+
+
+
+
+
+
 ```{r}
 
-# Make sure column names in terms_df are in lowercase without accents
-#colnames(terms_df) <- tolower(colnames(terms_df))
 
-# Normalize the focus terms
 termos_foco <- tolower(c(
   "composição", "natural", "cheiroso", "cheirosa", "adorou", "agradavel",
  "qualidade", "benefício", "excelente", "seco", "diarreia",
@@ -493,17 +394,12 @@ termos_foco <- tolower(c(
    "vegano", "ruim",  "energia", "quantidade", "caro", "barato", "embalagem"
 ))
 
-#colnames(terms_df) <- tolower(stri_trans_general(colnames(terms_df), "Latin-ASCII"))
-
-# Normalize focus terms
 termos_foco <- tolower(stri_trans_general(termos_foco, "Latin-ASCII"))
 
-# Filter only those terms that exist in the term-document matrix
 termos_validos <- termos_foco[termos_foco %in% colnames(terms_df)]
 
-# Calculate mean score for each term (and optionally count)
 resultados <- lapply(termos_validos, function(term) {
-  print(term)  # Para acompanhar o progresso
+
   subset <- terms_df[terms_df[[term]] > 0, ]
   data.frame(
     Termo = term,
@@ -513,18 +409,12 @@ resultados <- lapply(termos_validos, function(term) {
 })
 
 
-# Combine into a single dataframe
 resultados_df <- bind_rows(resultados)
 
-# Optional: Order by score or frequency
 resultados_df <- resultados_df %>% arrange(desc(Média_Score))
 
 print(resultados_df)
 
-```
-
-
-```{r}
 resultados_por_marca <- lapply(termos_validos, function(term) {
   terms_df %>%
     filter(.data[[term]] > 0) %>%
@@ -538,12 +428,6 @@ resultados_por_marca <- lapply(termos_validos, function(term) {
 
 df_marca_termos <- bind_rows(resultados_por_marca)
 
-```
-
-
-
-
-```{r}
 resultados_por_marca <- lapply(termos_validos, function(term) {
   terms_df %>%
     filter(.data[[term]] > 0) %>%
@@ -557,14 +441,12 @@ resultados_por_marca <- lapply(termos_validos, function(term) {
 
 df_marca_termos <- bind_rows(resultados_por_marca)
 
-```
 
+print(head(df_marca_termos, 5))
 
-```{r}
-View(df_marca_termos)
-```
+summary(df_marca_termos)
 
-```{r}
+skim(df_marca_termos)
 
 
 df_pivot <- df_marca_termos %>%
@@ -582,15 +464,6 @@ df_pivot[is.na(df_pivot)] <- 0
 
 
 
-#### Lista de Termos
-
-```{r}
-View(df_pivot)
-```
-
-
-
-
 
 #### PCA
 
@@ -598,6 +471,12 @@ View(df_pivot)
 
 ```{r}
 df_pivot <- as.data.frame(df_pivot)
+
+print(head(df_pivot), 5)
+
+skim(df_pivot)
+
+summary(df_pivot)
 
 rownames(df_pivot) <- df_pivot[,1]
 
@@ -645,43 +524,139 @@ fviz_pca_biplot(pc.cr, repel = TRUE)+
 
 ```
 
-### interpretação
 
 
-- composição
-- natural
-- Cheiroso
-- Adorou
-- Agradavel
-- fezes
-- qualidade
-- benefício
-- excelente
-- seco
-- recomendo
-- paladar
-- duro
-- aparencia
-- hipoalergenico
-- grande
-- alimentação
-- proteíca
-- aspecto
-- diarréia
-- coco
-- melhorou
-- piorou
-- alergia
-- coceira
-- pata
-- vermelho
-- macio
+```{r}
+
+df_marca_termos %>% 
+  group_by(Marca) %>% 
+  summarise(soma_freq = sum(Frequência))
 
 
-### Para fazer
+df_marca_termos %>% 
+    group_by(Marca) %>%
+    summarise(weighted_score = sum(Média_Score * Frequência) / sum(Frequência))  
 
-- Resampling
-- Criar graficos e fazer update no bot
-- Storytelling, colocar uma demo do bot talvez
-- Melhor visualização final
-- Interpretar o resultado final
+```
+
+
+Notamos uma estranha distorção aqui, a Organnact e a Spin se localizam de forma solitaria, o que de primeira olhada, parecem estar bem localizadas na percepção, mas na verdade, possuem um nivel amostral baixo para os termos escolhidos. Desta forma, priorizamos fazer un rebalanceamento amostral para que haja uma melhor reflexão da qualidade dos produtos e dos atributos aproximados. Tambem foram filtradas as marcas com baixa frequencia amostral, como a Organnact e a Spin.
+
+
+#### Resampling
+
+
+
+
+```{r}
+
+set.seed(777)
+df_resampled <- df_marca_termos %>%  
+  sample_n(size = min(100, n()), replace = FALSE)
+
+df_resampled %>%
+  group_by(Marca) %>%
+  summarise(weighted_score = sum(Média_Score * Frequência) / sum(Frequência))
+
+df_resampled %>% 
+  group_by(Marca) %>% 
+  summarise(soma_freq = sum(Frequência))
+
+
+df_resampled_Filt <- df_resampled %>%
+  group_by(Marca) %>% 
+  filter(sum(Frequência) >= 30) %>% 
+  ungroup()
+
+
+df_resampled_Filt %>% 
+  group_by(Marca) %>% 
+  summarise(soma_freq = sum(Frequência))
+
+
+```
+
+
+```{r}
+
+df_pivot <- df_resampled_Filt %>%
+  select(Marca, Termo, Média_Score) %>%
+  pivot_wider(
+    names_from = Termo,
+    values_from = Média_Score
+  )
+
+df_pivot[is.na(df_pivot)] <- 0
+
+
+
+df_pivot <- as.data.frame(df_pivot)
+
+print(head(df_pivot), 5)
+
+skim(df_pivot)
+
+summary(df_pivot)
+
+rownames(df_pivot) <- df_pivot[,1]
+
+df_pivot <- df_pivot[ ,-1]
+pc.cr <- df_pivot %>% prcomp(cor = TRUE)
+
+
+summary(pc.cr)
+
+
+pc.cr$x
+#pc.cr$rotation
+
+fviz_pca_biplot(pc.cr, repel = TRUE)+
+  labs(title = "Proximidade de atributos entre as marcas(MultiDimensional Scaling)",
+       caption='Fonte: Webscraping - PetLove') +
+  #theme_few()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        plot.caption = element_text(hjust=0,
+                                    vjust=-0.5,size=8))
+
+```
+
+
+```{r}
+
+pc.cr <- df_pivot %>% prcomp(cor = TRUE) 
+
+fviz_pca_biplot(pc.cr, repel = TRUE)+
+  labs(title = "Proximidade de atributos entre as marcas(MultiDimensional Scaling)",
+       caption='Fonte: Webscraping - PetLove') +
+  theme_few()+
+  theme(panel.border = element_blank(),
+        axis.line = element_line(colour = "black"),
+        plot.caption = element_text(hjust=0,
+                                    vjust=-0.5,size=8))
+
+ 
+
+```
+
+#### Interpretação
+
+
+Conclusão do PCA e do GGrepel: 
+
+A partir da modelagem utilizando o método de Topic Models, foi possível identificar os principais temas recorrentes nos comentários de compradores de petiscos para cachorros. Em seguida, vetorizamos esses tópicos com base nas notas de avaliação dos usuários, a fim de verificar quais estavam associados a percepções mais positivas ou negativas.
+
+Dessa forma, foi possível realizar o PCA e a visualização com ggrepel, que nos permitiram entender como as marcas desse mercado estão sendo percebidas pelos consumidores. Entretanto, as notas baixas de algumas empresas mas a boa localização destes no grafico de localização do PCA estavam suspeitas (no caso principal de Organnact e Spin), isto se deve a um desbalanço à quantidade amostral destas marcas com comentarios que incluem de fato estes termos
+
+Apos uma filtragem mais incisiva e um resampling, chegamos a um numero menor de marcas, mas com uma analise visual mais palpavel. O alto numero de avaliações para a Natural Crispy estava distorcendo a a distancia dos atributos das outras marcas, com esse rebalanceamento amostral, fomos capazes de separar quatro territorios para cadaquadrante no plano cartesiano
+
+As marcas Alles Pet e Wow estao no campo de petiscos naturais, caros, hipoalergenicos e com boa recepção dos animais. Mister Maskoto, no quarto quadrante, apesar de estar solitario de outras marcas se aproxima dos vetores de boas embalagens, melhora de condições e recomendações. Mas ja começa a ficar perto de atributos mal-vistos como "ressecado" 
+
+PetVegan, apesar de ser bem avaliado e visto como um petisco que nao incorre risco ou ate melhora condições como consistencia das fezes e dar energia aso melhores amigos, tamebm se encaixa bem na propposta de ser uma opção natural que oferec uma boa quantidade, apesar estar sujeito a criticas de tutores insatisfeitos 
+
+Mastig esta localizado em um lugar perigoso para a identidade da marca, perto dos atributos negativos como diarreia (causado por reações alergicas), percepção de ser um produto ruim e esfarelento. Apoesar de ainda ser entendido como um produto natural
+
+
+Mister maskoto e Natual Crisp estao proximas, oferecendo um produto acessível em grandes quantidades, com boa embalagem, macio e bem recomendado. Apesar de terem apontamentos sobre o produto ser ressecado. Importante notar que nas analises com uma gama amostral maior e em outras seeds testadas no rebalanceamento amostral, estas duas marcas ficaram bem proximas dos vetores negativos ligados à reações alergicas aos cães (proximidade com o vetor "diarréia")
+
+De forma geral, esse tipo de análise textual é essencial para que as marcas compreendam a percepção real dos consumidores na Petlove, possibilitando a identificação de pontos de melhoria e a definição de ações estratégicas mais eficazes.
